@@ -3,12 +3,32 @@ AC_PREREQ(2.59)
 m4_include(version.m4)
 
 AC_INIT([PRODUCT_NAME], [PRODUCT_VERSION], [PRODUCT_BUGREPORT], [PRODUCT_NAME], [PRODUCT_URL])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
+AM_PROG_AR
+#
+
+AC_CONFIG_MACRO_DIR([m4])
+
+#
+
+AC_ENABLE_SHARED
+AC_DISABLE_STATIC
+AC_PROG_LIBTOOL
+
+#
+
 AC_PROG_CC
+AM_PROG_CC_STDC
+AC_PROG_INSTALL
+
+#
+
 AC_CONFIG_HEADERS([config.h])
+
+#
+
 AC_CONFIG_FILES([
  Makefile
- src/Makefile
 ])
 AC_OUTPUT
 
