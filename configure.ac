@@ -27,6 +27,17 @@ AC_CONFIG_HEADERS([config.h])
 
 #
 
+AM_PATH_PYTHON(,, [:])
+AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
+AC_CHECK_LIB(python$PYTHON_VERSION, Py_Initialize)
+PYTHON_CFLAGS=`python$PYTHON_VERSION-config --cflags`
+PYTHON_LDFLAGS=`python$PYTHON_VERSION-config --ldflags`
+
+AC_SUBST(PYTHON_CFLAGS)
+AC_SUBST(PYTHON_LDFLAGS)
+
+#
+
 AC_CONFIG_FILES([
  Makefile
 ])

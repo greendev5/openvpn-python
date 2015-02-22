@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "plugin_utils.h"
 #include "py_plugin.h"
 
 struct py_plugin_context
@@ -40,7 +41,16 @@ OPENVPN_PLUGIN_DEF openvpn_plugin_handle_t OPENVPN_PLUGIN_FUNC(openvpn_plugin_op
      const char *envp[],
      struct openvpn_plugin_string_list **return_list)
 {
+    const char *verb_str = NULL;
     struct py_plugin_context *context = NULL;
+    
+    /* Init logginig */
+    verb_str = get_openvpn_env("verb", envp);
+    if (verb_str) {
+        init_plugin_logging(atoi(verb_str));
+    } else {
+        init_plugin_logging(3);
+    }
     
     context = py_plugin_context_init(NULL);
     if (!context)

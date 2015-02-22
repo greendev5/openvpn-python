@@ -32,4 +32,4 @@ Makefile
 *.log
 *.status
 libtool
-
+config.h.in~

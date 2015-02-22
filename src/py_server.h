@@ -10,9 +10,11 @@
 #ifndef _PY_SERVER_
 #define _PY_SERVER_
 
+#include "plugin_utils.h"
+
 struct py_server;
 
-extern struct py_server * py_server_init();
+extern struct py_server * py_server_init(struct plugin_config *pcnf);
 extern void py_server_term(struct py_server *pser);
 
 extern int py_auth_user_pass_verify(struct py_server *pser, const char *envp[]);
