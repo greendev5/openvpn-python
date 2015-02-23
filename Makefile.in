@@ -134,7 +134,8 @@ am__dirstamp = $(am__leading_dot)dirstamp
 am_openvpn_python_la_OBJECTS = src/openvpn_python_la-py_plugin.lo \
 	src/openvpn_python_la-plugin_utils.lo \
 	src/openvpn_python_la-py_handlers.lo \
-	src/openvpn_python_la-deferred_queue.lo
+	src/openvpn_python_la-deferred_queue.lo \
+	src/openvpn_python_la-py_server.lo
 openvpn_python_la_OBJECTS = $(am_openvpn_python_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -375,6 +376,8 @@ openvpn_python_la_SOURCES = \
     src/py_handlers.h \
     src/deferred_queue.c \
     src/deferred_queue.h \
+    src/py_server.c \
+    src/py_server.h \
     src/openvpn-plugin.h
 
 openvpn_python_la_LIBADD = @PYTHON_LDFLAGS@ -lc
@@ -498,6 +501,8 @@ src/openvpn_python_la-py_handlers.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/openvpn_python_la-deferred_queue.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
+src/openvpn_python_la-py_server.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
 
 openvpn-python.la: $(openvpn_python_la_OBJECTS) $(openvpn_python_la_DEPENDENCIES) $(EXTRA_openvpn_python_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(openvpn_python_la_LINK) -rpath $(libdir) $(openvpn_python_la_OBJECTS) $(openvpn_python_la_LIBADD) $(LIBS)
@@ -544,6 +549,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/openvpn_python_la-plugin_utils.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/openvpn_python_la-py_handlers.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/openvpn_python_la-py_plugin.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/openvpn_python_la-py_server.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/py_server_test-deferred_queue.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/py_server_test-plugin_utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/py_server_test-py_handlers.Po@am__quote@
@@ -601,6 +607,13 @@ src/openvpn_python_la-deferred_queue.lo: src/deferred_queue.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/deferred_queue.c' object='src/openvpn_python_la-deferred_queue.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(openvpn_python_la_CFLAGS) $(CFLAGS) -c -o src/openvpn_python_la-deferred_queue.lo `test -f 'src/deferred_queue.c' || echo '$(srcdir)/'`src/deferred_queue.c
+
+src/openvpn_python_la-py_server.lo: src/py_server.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(openvpn_python_la_CFLAGS) $(CFLAGS) -MT src/openvpn_python_la-py_server.lo -MD -MP -MF src/$(DEPDIR)/openvpn_python_la-py_server.Tpo -c -o src/openvpn_python_la-py_server.lo `test -f 'src/py_server.c' || echo '$(srcdir)/'`src/py_server.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/$(DEPDIR)/openvpn_python_la-py_server.Tpo src/$(DEPDIR)/openvpn_python_la-py_server.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/py_server.c' object='src/openvpn_python_la-py_server.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(openvpn_python_la_CFLAGS) $(CFLAGS) -c -o src/openvpn_python_la-py_server.lo `test -f 'src/py_server.c' || echo '$(srcdir)/'`src/py_server.c
 
 tests/py_server_test-py_server_test.o: tests/py_server_test.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(py_server_test_CFLAGS) $(CFLAGS) -MT tests/py_server_test-py_server_test.o -MD -MP -MF tests/$(DEPDIR)/py_server_test-py_server_test.Tpo -c -o tests/py_server_test-py_server_test.o `test -f 'tests/py_server_test.c' || echo '$(srcdir)/'`tests/py_server_test.c

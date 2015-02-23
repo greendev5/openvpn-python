@@ -12,7 +12,7 @@
 
 struct py_plugin_context;
 
-extern struct py_plugin_context * py_plugin_context_init(const char *path_to_opt_file);
+extern struct py_plugin_context * py_plugin_context_init(const char *path_to_opt_file, const char *envp[]);
 extern void py_plugin_context_free(struct py_plugin_context *context);
 
 #endif /* _PY_PLUGIN_ */

@@ -12,6 +12,8 @@ openvpn_python_la_SOURCES = \
     src/py_handlers.h \
     src/deferred_queue.c \
     src/deferred_queue.h \
+    src/py_server.c \
+    src/py_server.h \
     src/openvpn-plugin.h
 openvpn_python_la_LIBADD = @PYTHON_LDFLAGS@ -lc
 openvpn_python_la_LDFLAGS = \

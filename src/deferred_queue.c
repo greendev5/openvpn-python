@@ -82,24 +82,56 @@ out:
     return item;
 }
 
+static void write_auth_control_file(const char *filename, int res)
+{
+    FILE *fp = fopen(filename, "w");
+    if (fp) {
+        fprintf(fp, "%d", res);
+        fclose(fp);
+    }
+}
+
+static void exec_item(struct deferred_queue_item *item)
+{
+    const char *auth_control_file;
+    int r = 0;
+    
+    if (item == NULL)
+        return;
+    
+    PLUGIN_DEBUG("Perform handler from queue...");
+    r = py_context_exec_func(item->context, item->func, item->envp_buf->envpn);
+    
+    if (r < 0) {
+        PLUGIN_ERROR("Plugin function failed.");
+    }
+    
+    auth_control_file = get_openvpn_env("auth_control_file", (const char**)item->envp_buf->envpn);
+    if (auth_control_file != NULL) {
+        if (r == 0) {
+            PLUGIN_DEBUG("Write SUCCESS to auth_control_file: %s", auth_control_file);
+            write_auth_control_file(auth_control_file, 1);
+        } else {
+            PLUGIN_DEBUG("Write FAIL to auth_control_file: %s", auth_control_file);
+            write_auth_control_file(auth_control_file, 0);
+        }
+    }
+    
+    free_deferred_queue_item(item);
+}
+
 static void * consumer_func(void *arg)
 {
-    int r = 0;
     struct deferred_queue *queue = (struct deferred_queue*)arg;
     struct deferred_queue_item *item = NULL;
     for (;;) {
+        
         item = remove_item_from_deferred_queue(queue);
-        if (item) {
-            PLUGIN_DEBUG("Perform handler from queue...");
-            r = py_context_exec_func(item->context, item->func, item->envp_buf->envpn);
-            free_deferred_queue_item(item);
-            if (r < 0) {
-                PLUGIN_ERROR("Plugin function failed.");
-            }
-        }
-        else {
+        if (item)
+            exec_item(item);
+        else
             break;
-        }
+        
     }
     return NULL;
 }
