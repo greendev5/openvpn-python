@@ -114,6 +114,9 @@ OPENVPN_PLUGIN_DEF int OPENVPN_PLUGIN_FUNC(openvpn_plugin_func_v2)(
     
     py_server_send_command(context->pser, type, envp);
     
+    if(type == OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY)
+        return OPENVPN_PLUGIN_FUNC_DEFERRED;
+    
     return OPENVPN_PLUGIN_FUNC_SUCCESS;
 }
 
