@@ -2,5 +2,7 @@
 #
 #
 
+mkdir -p
+
 autoreconf -ifv
 
