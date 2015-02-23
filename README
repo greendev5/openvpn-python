@@ -48,24 +48,36 @@ Requirements: python2.7, python2.7-dev, autotools
 Usage
 -----
 
-1. Create config file from openvpn-python with next options:
+Create config file from openvpn-python with next options:
 
 pythonpath - Additional python path
+
 mod_plugin_up - Module with plugin_up function
+
 func_plugin_up - plugin_up function
+
 mod_plugin_down
+
 func_plugin_down
+
 mod_auth_user_pass_verify
+
 func_auth_user_pass_verify
+
 mod_client_connect
+
 func_client_connect
+
 mod_client_disconnect
+
 func_client_disconnect
 
 See example settings_ovpnpy.conf in examples folder.
 
-2. Create python module (or few) for handling events.
+Create python module (or few) for handling events.
+
 See example ovpn_test_module.py in examples folder.
 
-3. Run OpenVPN with option:
---plugin <path_to>/openvpn-python.so <path_to>/settings_test.conf
+Run OpenVPN with option:
+
+--plugin path_to/openvpn-python.so path_to/settings_test.conf
