@@ -7,6 +7,8 @@
  * of the BSD license.  See the LICENSE file for details.
  */
 
+#include <config.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -75,6 +77,8 @@ OPENVPN_PLUGIN_DEF openvpn_plugin_handle_t OPENVPN_PLUGIN_FUNC(openvpn_plugin_op
     } else {
         init_plugin_logging(3);
     }
+    
+    PLUGIN_LOG("OpenVPN plugin init: %s ", PACKAGE_STRING);
     
     if (string_array_len(argv) < 2) {
         PLUGIN_ERROR("Missed path to file with settings.");
