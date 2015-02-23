@@ -1,0 +1,71 @@
+openvpn-python
+--------------
+
+Plug-in embedding Python to OpenVPN using V2 API.
+
+Purpose
+-------
+
+OpenVPN can to execute user-defined scripts for handling 
+different types of events like connect, disconnect, auth.
+
+But while user-defined script is running main OpenVPN process
+is blocked and not processing existed or new connection.
+
+The common solution of this problem is to write OpenVPN plugin on c/c++
+programming languages. Plug-in API allow you to write handlers of 
+client events without blocking the main OpenVPN process.
+
+With openvpn-python you can use python code for handling
+clinet events without blocking the main OpenVPN process and without
+writing additional libraries on C/C++.
+
+Build from release branch
+-------------------------
+
+Requirements: python2.7, python2.7-dev
+
+1.  Download the package.
+2.  Unpack it.
+3.  Go to the root directory of the package.
+4.  ./configure
+5.  make
+6.  Use openvpn-python.so from .libs folder
+
+Build from development branch
+-----------------------------
+
+Requirements: python2.7, python2.7-dev, autotools
+
+1.  Download the package.
+2.  Unpack it.
+3.  Go to the root directory of the package.
+4.  ./autogen.sh
+5.  ./configure
+6.  make
+7.  Use openvpn-python.so from .libs folder
+
+Usage
+-----
+
+1. Create config file from openvpn-python with next options:
+
+pythonpath - Additional python path
+mod_plugin_up - Module with plugin_up function
+func_plugin_up - plugin_up function
+mod_plugin_down
+func_plugin_down
+mod_auth_user_pass_verify
+func_auth_user_pass_verify
+mod_client_connect
+func_client_connect
+mod_client_disconnect
+func_client_disconnect
+
+See example settings_ovpnpy.conf in examples folder.
+
+2. Create python module (or few) for handling events.
+See example ovpn_test_module.py in examples folder.
+
+3. Run OpenVPN with option:
+--plugin <path_to>/openvpn-python.so <path_to>/settings_test.conf

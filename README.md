@@ -1,2 +1,1 @@
-# openvpn-python
-# This is empty project for now. Try to visit this repo few weeks later...
+README
