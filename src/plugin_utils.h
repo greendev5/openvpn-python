@@ -13,6 +13,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include "openvpn-plugin.h"
+
 #define PLUGIN_LOG(format, ...) {                                                     \
     __lock_plugin_logging__();                                                        \
     fprintf(stderr, "OPENVPN_PYTHON_PLUGIN: [INFO]: " format "\n", ##__VA_ARGS__);    \

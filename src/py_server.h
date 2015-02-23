@@ -14,11 +14,9 @@
 
 struct py_server;
 
-extern struct py_server * py_server_init(struct plugin_config *pcnf);
+extern struct py_server * py_server_init(struct plugin_config *pcnf, const char *envp[]);
 extern void py_server_term(struct py_server *pser);
 
-extern int py_auth_user_pass_verify(struct py_server *pser, const char *envp[]);
-extern int py_client_connect(struct py_server *pser, const char *envp[]);
-extern int py_client_disconnect(struct py_server *pser, const char *envp[]);
+extern int py_server_send_command(struct py_server *pser, int command, const char *envp[]);
 
 #endif /* _PY_SERVER_ */

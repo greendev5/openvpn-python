@@ -15,11 +15,9 @@
 
 #define PY_KEY_BUF_SIZE 1024
 
-#define PY_FUNCTION_DEF_OR_NULL(x) \
-    struct py_function_def *func_def = &context->x; \
-    if ((func_def->module == NULL) || (func_def->module == NULL)) \
-        return NULL; \
-    return func_def;
+#define OVPN_LOG_DEBUG 0
+#define OVPN_LOG_INFO  1
+#define OVPN_LOG_ERROR 2
 
 struct py_function_def
 {
@@ -32,11 +30,91 @@ struct py_context
     PyThreadState *main_thread_state;
     PyThreadState *worker_thread_state;
     
+    PyObject *ovpnpy_module;
+    
     struct py_function_def plugin_up_func;
     struct py_function_def plugin_down_func;
     struct py_function_def auth_user_pass_verify_func;
     struct py_function_def client_connect_func;
     struct py_function_def client_disconnect_func;
+    
+    struct py_function_def *handlers_mapper[OPENVPN_PLUGIN_N];
+};
+
+/*
+ */
+static void fill_py_context_mapper(struct py_context *context)
+{
+    context->handlers_mapper[OPENVPN_PLUGIN_UP] = &context->plugin_up_func;
+    context->handlers_mapper[OPENVPN_PLUGIN_DOWN] = &context->plugin_down_func;
+    
+    /* context->handlers_mapper[OPENVPN_PLUGIN_ROUTE_UP]   = NULL; */
+    /* context->handlers_mapper[OPENVPN_PLUGIN_IPCHANGE]   = NULL; */
+    /* context->handlers_mapper[OPENVPN_PLUGIN_TLS_VERIFY] = NULL; */
+    
+    context->handlers_mapper[OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY] = &context->auth_user_pass_verify_func;
+    context->handlers_mapper[OPENVPN_PLUGIN_CLIENT_CONNECT] = &context->client_connect_func;
+    context->handlers_mapper[OPENVPN_PLUGIN_CLIENT_DISCONNECT] = &context->client_disconnect_func;
+    
+    /* context->handlers_mapper[OPENVPN_PLUGIN_LEARN_ADDRESS]     = NULL; */
+    /* context->handlers_mapper[OPENVPN_PLUGIN_CLIENT_CONNECT_V2] = NULL; */
+    /* context->handlers_mapper[OPENVPN_PLUGIN_TLS_FINAL]         = NULL; */
+    /* context->handlers_mapper[OPENVPN_PLUGIN_ENABLE_PF]         = NULL; */
+}
+
+/*
+ */
+static struct
+{
+    const char *name;
+    int  value;
+} ovpnpy_constants[] = {
+    {"OVPN_LOG_DEBUG", OVPN_LOG_DEBUG},
+    {"OVPN_LOG_INFO",  OVPN_LOG_INFO},
+    {"OVPN_LOG_ERROR", OVPN_LOG_ERROR},
+    
+    { NULL, 0 }
+};
+
+static PyObject * python_ovpn_log(PyObject *module, PyObject *args)
+{
+    int status;
+    char *msg;
+    
+    if (!PyArg_ParseTuple(args, "is", &status, &msg)) {
+        return NULL;
+    }
+    
+    switch (status) {
+            
+        case OVPN_LOG_INFO:
+            PLUGIN_LOG("%s", msg);
+            break;
+            
+        case OVPN_LOG_ERROR:
+            PLUGIN_ERROR("%s", msg);
+            break;
+            
+        default:
+            PLUGIN_DEBUG("%s", msg);
+            break;
+    }
+    
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyMethodDef ovpnpy_methods[] = {
+    {
+        "ovpnlog",
+        &python_ovpn_log,
+        METH_VARARGS,
+        "ovpnpy.ovpnlog(level, msg)\n\n" \
+        "Print a message using openvpn logging system. level should be one of the\n" \
+        "constants OVPN_LOG_DEBUG, OVPN_LOG_INFO, OVPN_LOG_ERROR.\n"
+    },
+    
+    { NULL, NULL, 0, NULL },
 };
 
 static void python_error(void)
@@ -141,13 +219,55 @@ static void python_clear_function(struct py_function_def *def)
     def->module = NULL;
 }
 
+static void python_add_path(const char *pythonpath)
+{
+    /* This will be called with the GIL lock held */
+    
+    PyObject *sys_path;
+    PyObject *path;
+    size_t len, i, prev_i;
+    
+    if (pythonpath == NULL)
+        return;
+    
+    if (!strlen(pythonpath))
+        return;
+    
+    sys_path = PySys_GetObject("path");
+    if (sys_path == NULL)
+        return;
+    
+    for (i = prev_i = 0; i <= strlen(pythonpath); ++i) {
+        if ((pythonpath[i] == ';') || (pythonpath[i] == '\0')) {
+            len = i - prev_i;
+            if (len > 0) {
+                path = PyString_FromStringAndSize(pythonpath + prev_i, len);
+                if (path)
+                    PyList_Append(sys_path, path);
+            }
+            prev_i = i + 1;
+        }
+    }
+}
+
 struct py_context * py_context_init(struct plugin_config *pcnf)
 {
     static char name[] = "openvpn";
     static char *argv[] = {"openvpn"};
+    static char *module_descr = "OpenVPN python plugin loggin module.";
     struct py_context *pcnt = NULL;
+    size_t i;
     
     Py_SetProgramName(name);
+    
+    /* Set virtual env */
+    if (pcnf->virtualenv) {
+        PLUGIN_LOG("Setting virtualenv to %s", pcnf->virtualenv);
+        Py_SetPythonHome(pcnf->virtualenv);
+        PLUGIN_LOG("Done setting virtualenv");
+    } else {
+        PLUGIN_LOG("No virtualenv in settings");
+    }
     
     Py_InitializeEx(0);	/* Don't override signal handlers */
     
@@ -155,8 +275,21 @@ struct py_context * py_context_init(struct plugin_config *pcnf)
     
     PyEval_InitThreads(); /* This also grabs a lock */
     
+    python_add_path(pcnf->pythonpath);
+    
     pcnt = (struct py_context*)malloc(sizeof(struct py_context));
     memset(pcnt, 0, sizeof(struct py_context));
+    
+    pcnt->ovpnpy_module = Py_InitModule3("ovpnpy", ovpnpy_methods, module_descr);
+    if (pcnt->ovpnpy_module == NULL)
+        goto failed;
+    
+    for (i = 0; ovpnpy_constants[i].name != NULL; ++i) {
+        if ((PyModule_AddIntConstant(pcnt->ovpnpy_module,
+                                     ovpnpy_constants[i].name,
+                                     ovpnpy_constants[i].value)) < 0)
+            goto failed;
+    }
     
     if (python_load_function(pcnf->mod_plugin_up,
                              pcnf->func_plugin_up,
@@ -183,6 +316,8 @@ struct py_context * py_context_init(struct plugin_config *pcnf)
                              &pcnt->client_disconnect_func) < 0)
         goto failed;
     
+    fill_py_context_mapper(pcnt);
+    
     pcnt->main_thread_state = PyThreadState_Get(); /* We need this for setting up thread local stuff */;
     pcnt->worker_thread_state = PyThreadState_New(pcnt->main_thread_state->interp);
     
@@ -193,8 +328,11 @@ struct py_context * py_context_init(struct plugin_config *pcnf)
     return pcnt;
 
 failed:
-    if (pcnt != NULL)
+    if (pcnt != NULL) {
+        /** @todo Need solve problem with module cleanup */
+        /* Py_XDECREF(pcnt->ovpnpy_module); */
         free(pcnt);
+    }
     python_error();
     PyEval_ReleaseLock();
     Py_Finalize();
@@ -209,6 +347,9 @@ void py_context_free(struct py_context *context)
     
     PyEval_AcquireLock();
     tmp_state = PyThreadState_Swap(context->main_thread_state);
+    
+    /** @todo Need solve problem with module cleanup */
+    /* Py_XDECREF(context->ovpnpy_module); */
     
     python_clear_function(&context->plugin_up_func);
     python_clear_function(&context->plugin_down_func);
@@ -229,29 +370,12 @@ void py_context_free(struct py_context *context)
     PLUGIN_LOG("Python process: Python context cleared. Handlers cleared.");
 }
 
-struct py_function_def * plugin_up_func(struct py_context *context)
+struct py_function_def * py_context_handler_func(struct py_context *context, int command)
 {
-    PY_FUNCTION_DEF_OR_NULL(plugin_up_func);
-}
-
-struct py_function_def * plugin_down_func(struct py_context *context)
-{
-    PY_FUNCTION_DEF_OR_NULL(plugin_up_func);
-}
-
-struct py_function_def * auth_user_pass_verify_func(struct py_context *context)
-{
-    PY_FUNCTION_DEF_OR_NULL(auth_user_pass_verify_func);
-}
-
-struct py_function_def * client_connect_func(struct py_context *context)
-{
-    PY_FUNCTION_DEF_OR_NULL(client_connect_func);
-}
-
-struct py_function_def * client_disconnect_func(struct py_context *context)
-{
-    PY_FUNCTION_DEF_OR_NULL(client_disconnect_func);
+    if ((command < 0) || (command >= OPENVPN_PLUGIN_N))
+        return NULL;
+    
+    return context->handlers_mapper[command];
 }
 
 int py_context_exec_func(struct py_context *context, struct py_function_def *func, char **envp)

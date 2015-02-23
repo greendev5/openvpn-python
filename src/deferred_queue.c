@@ -82,7 +82,6 @@ out:
     return item;
 }
 
-
 static void * consumer_func(void *arg)
 {
     int r = 0;

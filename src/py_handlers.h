@@ -28,10 +28,6 @@ extern void py_context_free(struct py_context *context);
  */
 extern int py_context_exec_func(struct py_context *context, struct py_function_def *func, char **envp);
 
-extern struct py_function_def * plugin_up_func(struct py_context *context);
-extern struct py_function_def * plugin_down_func(struct py_context *context);
-extern struct py_function_def * auth_user_pass_verify_func(struct py_context *context);
-extern struct py_function_def * client_connect_func(struct py_context *context);
-extern struct py_function_def * client_disconnect_func(struct py_context *context);
+extern struct py_function_def * py_context_handler_func(struct py_context *context, int command);
 
 #endif /* _PY_HANDLERS_ */

@@ -21,13 +21,6 @@
 #include "deferred_queue.h"
 #include "py_server.h"
 
-/* Command codes for foreground -> background communication */
-#define PYOVPN_MSG_AUTH_USER_PASS_VERIFY 0
-#define PYOVPN_MSG_CLIENT_CONNECT        1
-#define PYOVPN_MSG_CLIENT_DISCONNECT     2
-#define PYOVPN_MSG_PLUGIN_UP             3
-#define PYOVPN_MSG_PLUGIN_DOWN           4
-
 /* Response codes for background -> foreground communication */
 #define PYOVPN_RESPONSE_SUCCEEDED   10
 #define PYOVPN_RESPONSE_FAILED      11
@@ -174,8 +167,10 @@ static int recv_command(int fd, int *command, struct ovpn_envp_buf **envp_buf)
     *envp_buf = ovpn_envp_buf_init(len, mem_size);
     
     ret = recv_buf(fd, (*envp_buf)->buf, mem_size, NULL);
-    if (ret != 0)
+    if (ret != 0) {
+        ovpn_envp_buf_free(*envp_buf);
         return -1;
+    }
     
     (*envp_buf)->envpn[0] = (*envp_buf)->buf;
     j = 1;
@@ -201,6 +196,7 @@ static void py_server_loop(int fd, struct py_context *context, struct deferred_q
     int command;
     struct ovpn_envp_buf *envp_buf;
     struct deferred_queue_item *item;
+    struct py_function_def *handler;
     
     while (1) {
         
@@ -211,34 +207,13 @@ static void py_server_loop(int fd, struct py_context *context, struct deferred_q
             break;
         }
         
-        switch (command) {
-
-            case PYOVPN_MSG_PLUGIN_UP:
-                item = create_deferred_queue_item(context, plugin_up_func(context), envp_buf);
-                break;
-            
-            case PYOVPN_MSG_PLUGIN_DOWN:
-                item = create_deferred_queue_item(context, plugin_down_func(context), envp_buf);
-                break;
-                
-            case PYOVPN_MSG_AUTH_USER_PASS_VERIFY:
-                item = create_deferred_queue_item(context, auth_user_pass_verify_func(context), envp_buf);
-                break;
-            
-            case PYOVPN_MSG_CLIENT_CONNECT:
-                item = create_deferred_queue_item(context, client_connect_func(context), envp_buf);
-                break;
-                
-            case PYOVPN_MSG_CLIENT_DISCONNECT:
-                item = create_deferred_queue_item(context, client_disconnect_func(context), envp_buf);
-                break;
-                
-            default:
-                break;
-        }
-        
-        if (item != NULL)
+        handler = py_context_handler_func(context, command);
+        if (handler != NULL) {
+            item = create_deferred_queue_item(context, handler, envp_buf);
             add_item_to_deferred_queue(queue, item);
+        } else {
+            ovpn_envp_buf_free(envp_buf);
+        }
         
         if (send_pyovpn_resp(fd, PYOVPN_RESPONSE_SUCCEEDED) < 0) {
             PLUGIN_DEBUG("Python process: Connection with OpenVPN process interupted. Break listening loop");
@@ -248,7 +223,37 @@ static void py_server_loop(int fd, struct py_context *context, struct deferred_q
     }
 }
 
-struct py_server * py_server_init(struct plugin_config *pcnf)
+/*
+ * Daemonize if "daemon" env var is true.
+ * Preserve stderr across daemonization if
+ * "daemon_log_redirect" env var is true.
+ */
+static void daemonize(const char *envp[])
+{
+    const char *daemon_string = get_openvpn_env("daemon", envp);
+    const char *log_redirect  = get_openvpn_env("daemon_log_redirect", envp);
+    int fd = -1;
+    
+    if (envp == NULL)
+        return;
+    
+    if ((daemon_string != NULL) && (daemon_string[0] == '1')) {
+        
+        if (log_redirect && log_redirect[0] == '1')
+            fd = dup(2);
+        
+        if (daemon (0, 0) < 0) {
+            PLUGIN_ERROR("Python process: daemonization failed");
+        
+        } else if (fd >= 3) {
+            dup2 (fd, 2);
+            close (fd);
+        
+        }
+    }
+}
+
+struct py_server * py_server_init(struct plugin_config *pcnf, const char *envp[])
 {
     pid_t pid;
     int fd[2];
@@ -305,6 +310,9 @@ struct py_server * py_server_init(struct plugin_config *pcnf)
         /* Ignore most signals (the parent will receive them) */
         set_signals();
         
+        /* Daemonize if --daemon option is set. */
+        daemonize(envp);
+        
         /* Init plugin loggin for multimple threads. */
         verb = get_plugin_logging_verbosity();
         init_plugin_logging_with_lock(verb);
@@ -332,7 +340,7 @@ struct py_server * py_server_init(struct plugin_config *pcnf)
             free_deferred_queue(queue);
         if (context != NULL)
             py_context_free(context);
-        PLUGIN_DEBUG("Python process: Python process is finished.");
+        PLUGIN_LOG("Python process: Python process is finished.");
         
         clear_plugin_logging_with_lock();
         
@@ -360,43 +368,17 @@ void py_server_term(struct py_server *pser)
     free(pser);
 }
 
-int py_auth_user_pass_verify(struct py_server *pser, const char *envp[])
+int py_server_send_command(struct py_server *pser, int command, const char *envp[])
 {
     int resp;
-    int ret = send_command(pser->foreground_fd, PYOVPN_MSG_AUTH_USER_PASS_VERIFY, envp);
+    int ret = send_command(pser->foreground_fd, command, envp);
     if (ret < 0)
         return -1;
     
     ret = recv_pyovpn_resp(pser->foreground_fd, &resp);
     if ((ret < 0) || (resp != PYOVPN_RESPONSE_SUCCEEDED))
         return -1;
-    return resp == PYOVPN_RESPONSE_SUCCEEDED ? 0 : -1;
-}
-
-int py_client_connect(struct py_server *pser, const char *envp[])
-{
-    int resp;
-    int ret = send_command(pser->foreground_fd, PYOVPN_MSG_CLIENT_CONNECT, envp);
-    if (ret < 0)
-        return -1;
-    
-    ret = recv_pyovpn_resp(pser->foreground_fd, &resp);
-    if ((ret < 0) || (resp != PYOVPN_RESPONSE_SUCCEEDED))
-        return -1;
-    return resp == PYOVPN_RESPONSE_SUCCEEDED ? 0 : -1;
-}
-
-int py_client_disconnect(struct py_server *pser, const char *envp[])
-{
-    int resp;
-    int ret = send_command(pser->foreground_fd, PYOVPN_MSG_CLIENT_DISCONNECT, envp);
-    if (ret < 0)
-        return -1;
-    
-    ret = recv_pyovpn_resp(pser->foreground_fd, &resp);
-    if ((ret < 0) || (resp != PYOVPN_RESPONSE_SUCCEEDED))
-        return -1;
-    return resp == PYOVPN_RESPONSE_SUCCEEDED ? 0 : -1;
+    return 0;
 }
 
 /*

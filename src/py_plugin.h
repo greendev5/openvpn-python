@@ -10,8 +10,6 @@
 #ifndef _PY_PLUGIN_
 #define _PY_PLUGIN_
 
-#include "openvpn-plugin.h"
-
 struct py_plugin_context;
 
 extern struct py_plugin_context * py_plugin_context_init(const char *path_to_opt_file);

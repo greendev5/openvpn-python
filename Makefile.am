@@ -23,15 +23,6 @@ openvpn_python_la_LDFLAGS = \
 openvpn_python_la_CFLAGS = $(AM_CFLAGS) @PYTHON_CFLAGS@
 
 
-TESTS = plugin_utils_test
-check_PROGRAMS = plugin_utils_test
-plugin_utils_test_SOURCES = \
-    tests/plugin_utils_test.c \
-    src/plugin_utils.c
-plugin_utils_test_LDADD = @PYTHON_LDFLAGS@
-plugin_utils_test_CFLAGS = $(AM_CFLAGS) @PYTHON_CFLAGS@
-
-
 noinst_PROGRAMS = py_server_test
 py_server_test_SOURCES = \
     tests/py_server_test.c \
