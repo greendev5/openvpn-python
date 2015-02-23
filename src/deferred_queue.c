@@ -94,6 +94,7 @@ static void write_auth_control_file(const char *filename, int res)
 static void exec_item(struct deferred_queue_item *item)
 {
     const char *auth_control_file;
+    struct py_function_def *auth_def = py_context_handler_func(item->context, OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY);
     int r = 0;
     
     if (item == NULL)
@@ -107,7 +108,7 @@ static void exec_item(struct deferred_queue_item *item)
     }
     
     auth_control_file = get_openvpn_env("auth_control_file", (const char**)item->envp_buf->envpn);
-    if (auth_control_file != NULL) {
+    if ((auth_control_file != NULL) && (item->func == auth_def)) {
         if (r == 0) {
             PLUGIN_DEBUG("Write SUCCESS to auth_control_file: %s", auth_control_file);
             write_auth_control_file(auth_control_file, 1);
