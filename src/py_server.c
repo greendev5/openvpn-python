@@ -262,6 +262,7 @@ struct py_server * py_server_init(struct plugin_config *pcnf, const char *envp[]
     int ret, resp;
     struct py_context *context = NULL;
     struct deferred_queue *queue = NULL;
+    const char *daemon_string = get_openvpn_env("daemon", envp);
     
     /*
      * Make a socket for foreground and background processes
@@ -297,7 +298,10 @@ struct py_server * py_server_init(struct plugin_config *pcnf, const char *envp[]
         pser = (struct py_server *)malloc(sizeof(struct py_server));
         pser->background_pid = pid;
         pser->foreground_fd = fd[0];
-        pser->is_daemon = 0;
+        if ((daemon_string != NULL) && (daemon_string[0] == '1'))
+            pser->is_daemon = 1
+        else
+            pser->is_daemon = 0;
         PLUGIN_LOG("OpenVPN Process: Python server process started with pid: %d", pid);
         return pser;
         
