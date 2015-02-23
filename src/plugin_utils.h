@@ -118,7 +118,7 @@ extern void init_plugin_logging_with_lock(int verbosity);
  */
 extern void clear_plugin_logging_with_lock(void);
 
-extern int get_plugin_logging_verbosity();
+extern int get_plugin_logging_verbosity(void);
 
 int __lock_plugin_logging__(void);
 void __unlock_plugin_logging__(void);

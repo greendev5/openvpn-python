@@ -299,7 +299,7 @@ struct py_server * py_server_init(struct plugin_config *pcnf, const char *envp[]
         pser->background_pid = pid;
         pser->foreground_fd = fd[0];
         if ((daemon_string != NULL) && (daemon_string[0] == '1'))
-            pser->is_daemon = 1
+            pser->is_daemon = 1;
         else
             pser->is_daemon = 0;
         PLUGIN_LOG("OpenVPN Process: Python server process started with pid: %d", pid);
