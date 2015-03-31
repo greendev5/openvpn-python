@@ -45,6 +45,9 @@ struct plugin_config * plugin_config_init(const char *filename)
         } else if (!strcmp(key, "pythonpath")) {
             PLUGIN_OPT_ALLOC_AND_COPY(pcnf->pythonpath, value);
 
+        } else if (!strcmp(key, "uid")) {
+            PLUGIN_OPT_ALLOC_AND_COPY(pcnf->uid, value);
+            
         } else if (!strcmp(key, "mod_plugin_up")) {
             PLUGIN_OPT_ALLOC_AND_COPY(pcnf->mod_plugin_up, value);
         
@@ -96,6 +99,7 @@ void plugin_config_free(struct plugin_config *pcnf)
     
     PLUGIN_OPT_FREE_IF_NOT_NULL(pcnf->virtualenv);
     PLUGIN_OPT_FREE_IF_NOT_NULL(pcnf->pythonpath);
+    PLUGIN_OPT_FREE_IF_NOT_NULL(pcnf->uid);
     PLUGIN_OPT_FREE_IF_NOT_NULL(pcnf->mod_plugin_up);
     PLUGIN_OPT_FREE_IF_NOT_NULL(pcnf->func_plugin_up);
     PLUGIN_OPT_FREE_IF_NOT_NULL(pcnf->mod_plugin_down);

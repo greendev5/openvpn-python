@@ -16,6 +16,7 @@
 #include <syslog.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <pwd.h>
 
 #include "plugin_utils.h"
 #include "deferred_queue.h"
@@ -260,6 +261,7 @@ struct py_server * py_server_init(struct plugin_config *pcnf, const char *envp[]
     struct py_server *pser;
     int verb;
     int ret, resp;
+    struct passwd *pwd_data = NULL;
     struct py_context *context = NULL;
     struct deferred_queue *queue = NULL;
     const char *daemon_string = get_openvpn_env("daemon", envp);
@@ -320,6 +322,22 @@ struct py_server * py_server_init(struct plugin_config *pcnf, const char *envp[]
         /* Init plugin loggin for multimple threads. */
         verb = get_plugin_logging_verbosity();
         init_plugin_logging_with_lock(verb);
+        
+        /* Set uid */
+        if (pcnf->uid) {
+            pwd_data = getpwnam(pcnf->uid);
+            if (pwd_data)
+                ret = setuid(pwd_data->pw_uid);
+            if ((pwd_data == NULL) || (ret == -1)) {
+                PLUGIN_ERROR("Python process: Could not set uid to %s.", pcnf->uid);
+                PLUGIN_DEBUG("Python process: Sending PYOVPN_RESPONSE_FAILED from Python process to OpenVPN process");
+                send_pyovpn_resp(fd[1], PYOVPN_RESPONSE_FAILED);
+                PLUGIN_LOG("Python process: Python process is finished.");
+                clear_plugin_logging_with_lock();
+                close(fd[1]);
+                exit(0);
+            }
+        }
         
         context = py_context_init(pcnf);
         if (context == NULL) {

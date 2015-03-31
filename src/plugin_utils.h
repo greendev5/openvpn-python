@@ -39,6 +39,7 @@ struct plugin_config
 {
     char *virtualenv;
     char *pythonpath;
+    char *uid;
     
     char *mod_plugin_up;
     char *func_plugin_up;
