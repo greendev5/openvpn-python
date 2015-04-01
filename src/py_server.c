@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <signal.h>
 #include <syslog.h>
 #include <fcntl.h>
@@ -310,6 +311,8 @@ struct py_server * py_server_init(struct plugin_config *pcnf, const char *envp[]
     } else {
         /* Background Process */
         
+        ret = -1;
+
         /* close all parent fds except our socket back to parent */
         close_fds_except(fd[1]);
         

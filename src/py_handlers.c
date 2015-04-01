@@ -290,6 +290,14 @@ struct py_context * py_context_init(struct plugin_config *pcnf)
                                      ovpnpy_constants[i].value)) < 0)
             goto failed;
     }
+
+    if (pcnf->virtualenv) {
+        if ((PyModule_AddStringConstant(pcnt->ovpnpy_module, "VIRTUALENV", pcnf->virtualenv)) < 0)
+            goto failed;
+    } else {
+        if ((PyModule_AddStringConstant(pcnt->ovpnpy_module, "VIRTUALENV", "")) < 0)
+            goto failed;
+    }
     
     if (python_load_function(pcnf->mod_plugin_up,
                              pcnf->func_plugin_up,
