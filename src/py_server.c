@@ -19,6 +19,8 @@
 #include <errno.h>
 #include <pwd.h>
 
+#include <dlfcn.h>
+
 #include "plugin_utils.h"
 #include "deferred_queue.h"
 #include "py_server.h"
@@ -266,7 +268,8 @@ struct py_server * py_server_init(struct plugin_config *pcnf, const char *envp[]
     struct py_context *context = NULL;
     struct deferred_queue *queue = NULL;
     const char *daemon_string = get_openvpn_env("daemon", envp);
-    
+    void* handle = NULL;    
+
     /*
      * Make a socket for foreground and background processes
      * to communicate.
@@ -341,7 +344,14 @@ struct py_server * py_server_init(struct plugin_config *pcnf, const char *envp[]
                 exit(0);
             }
         }
-        
+   
+        handle = dlopen("/usr/lib/libpython2.7.so", RTLD_LAZY | RTLD_GLOBAL);
+        if (handle) {
+            PLUGIN_LOG("Python process: opened dl: /usr/lib/libpython2.7.so");
+        } else {
+            PLUGIN_ERROR("Python process: could not open dl: /usr/lib/libpython2.7.so");
+        }
+     
         context = py_context_init(pcnf);
         if (context == NULL) {
             PLUGIN_DEBUG("Python process: Sending PYOVPN_RESPONSE_FAILED from Python process to OpenVPN process");
@@ -366,7 +376,10 @@ struct py_server * py_server_init(struct plugin_config *pcnf, const char *envp[]
         if (context != NULL)
             py_context_free(context);
         PLUGIN_LOG("Python process: Python process is finished.");
-        
+       
+        if (handle != NULL)
+            dlclose(handle);
+ 
         clear_plugin_logging_with_lock();
         
         close(fd[1]);
