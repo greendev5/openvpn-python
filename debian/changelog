@@ -1,0 +1,18 @@
+openvpn-python (0.2.1-1) unstable; urgency=low
+
+  * Temporary solution for problem http://bugs.python.org/issue19153.
+
+ -- Illia Muzychuk <i.muzichuk@gmail.com>  Wed, 15 Apr 2015 09:13:38 -0800
+
+openvpn-python (0.2.0-1) unstable; urgency=low
+
+  * Added new option - uid - to plugin config file.
+  * Import path to virtualenv in ovpnpy module.
+
+ -- Illia Muzychuk <i.muzichuk@gmail.com>  Wed, 01 Apr 2015 09:13:38 -0800
+
+openvpn-python (0.1.0-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Illia Muzychuk <i.muzichuk@gmail.com>  Mon, 23 Feb 2015 09:13:38 -0800

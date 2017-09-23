@@ -1,0 +1,14 @@
+Source: openvpn-python
+Section: net
+Priority: extra
+Maintainer: Illia Muzychuk <i.muzichuk@gmail.com>
+Build-Depends: debhelper (>= 8.0.0), autotools-dev
+Standards-Version: 3.9.2
+Homepage: https://github.com/greendev5/openvpn-python
+#Vcs-Git: git://git.debian.org/collab-maint/openvpn-python.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/openvpn-python.git;a=summary
+
+Package: openvpn-python
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Plug-in embedding Python to OpenVPN
